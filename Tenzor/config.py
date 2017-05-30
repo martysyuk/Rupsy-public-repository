@@ -12,5 +12,5 @@ E-Mail: martysyuk@gmail.com
 TITLE_TAG = 'itemprop="headline"'
 TEXT_TAG = 'itemprop="articleBody"'
 
-# TEST_URL = 'https://lenta.ru/news/2017/05/29/deripaska/'
-TEST_URL = 'https://www.gazeta.ru/social/news/2017/05/30/n_10109639.shtml'
+TEST_URL = 'https://lenta.ru/news/2017/05/29/deripaska/'
+# TEST_URL = 'https://www.gazeta.ru/social/news/2017/05/30/n_10109639.shtml'
