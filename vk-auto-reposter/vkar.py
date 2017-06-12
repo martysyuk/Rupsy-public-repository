@@ -19,7 +19,7 @@ import json
 class Main:
     def __init__(self):
 
-        self.__version__ = '1.2.3'
+        self.__version__ = '1.2.7'
 
         print()
         print('VKar v.{} - VKontakte auto reposter\n'
