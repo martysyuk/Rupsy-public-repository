@@ -18,7 +18,17 @@ import json
 
 class Main:
     def __init__(self):
-        print('Starting searching posts...')
+
+        self.__version__ = '1.2.3'
+
+        print()
+        print('VKar v.{} - VKontakte auto reposter\n'
+              '---------------------------------------------------------\n'
+              'Программа автоматическогопоиска публикаций  по  интересам\n'
+              'с наибольшим количеством лайков и автоматическим репостом\n'
+              'этих записей на стену Вашего сообщества.\n\n'
+              'Автор: Мартысюк Илья\n'
+              'E-Mail: martysyuk@gmail.com\n'.format(self.__version__))
 
         self.cfg_file_name = 'config.json'
         self.posted_file_name = 'posted.json'
@@ -50,7 +60,7 @@ class Main:
             with open(_file_name, 'r', encoding='UTF8') as _file:
                 return json.load(_file)
         except FileNotFoundError:
-            exit('File {} not found! Program exit...'.format(_file_name))
+            exit('Ошибка: файл {} не найден.'.format(_file_name))
 
     @staticmethod
     def save_json(_data, _file_name):
@@ -58,7 +68,7 @@ class Main:
             with open(_file_name, 'w', encoding='UTF8') as _file:
                 json.dump(_data, _file, sort_keys=True, ensure_ascii=False, indent=2)
         except IOError:
-            print('Ошибка записи файла {}'.format(_file_name))
+            exit('Ошибка записи файла {}'.format(_file_name))
 
     def get_groups_list(self):
         try:
@@ -101,6 +111,7 @@ class Main:
             self.cfg['search']['checking_interest'] = 0
 
     def do_repost(self):
+        try_couter = 0
         for each in range(len(self.df)):
             _getter = self.df.iloc[each]
             _post_id = 'wall{}_{}'.format(_getter['owner_id'], _getter['post_id'])
@@ -116,12 +127,16 @@ class Main:
                 print('Запись опубликованна.')
                 exit(0)
             else:
-                print('В данной группе новых постов нет. Переключаемся на следующий интерес.')
-                self.increase_counter()
-                self.save_json(self.cfg, self.cfg_file_name)
-                self.get_groups_list()
-                self.load_posts_from_groups()
-                self.do_repost()
+                try_couter += 1
+                if try_couter < len(self.cfg['search']['interests']):
+                    print('В данной группе новых постов нет. Переключаемся на следующий интерес.')
+                    self.increase_counter()
+                    self.save_json(self.cfg, self.cfg_file_name)
+                    self.get_groups_list()
+                    self.load_posts_from_groups()
+                    self.do_repost()
+                else:
+                    exit('На сегодня свежих постов больше нет!')
 
 if __name__ == '__main__':
     wrapper = Main()
