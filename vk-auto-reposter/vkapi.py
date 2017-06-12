@@ -46,6 +46,9 @@ class VKApiRequest:
             time.sleep(0.5)
             return True
         else:
+            if _response['error']['error_code'] == 5:
+                print('Error code: {}: {}'.format(_response['error']['error_code'], _response['error']['error_msg']))
+                exit(1)
             if show_error:
                 print('Error code: {}: {}'.format(_response['error']['error_code'], _response['error']['error_msg']))
             return False

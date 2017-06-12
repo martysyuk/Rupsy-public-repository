@@ -10,7 +10,7 @@ reposts_count = 1
 repost_wait = 3600
 maximum_checking_count = 30
 
-token_url = 'https://oauth.vk.com/blank.html#access_token=48ae5fdf67733547a8dbdff8cbb45875f53c06cc1f1730aaaa9e61254995db80ed72e249558f6c5ce7918&expires_in=86400&user_id=4119375'
+token_url = 'https://oauth.vk.com/blank.html#access_token=d476681a8164620b1e3998dc7fb2c85e56ea08cdf657acb0121428adc2604d1f99758322e8c32f816f59c&expires_in=86400&user_id=4119375'
 user_id = 'martysyuk'
 app_id = 6064589
 
