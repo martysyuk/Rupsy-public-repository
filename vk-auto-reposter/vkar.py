@@ -123,6 +123,5 @@ class Main:
                 self.load_posts_from_groups()
                 self.do_repost()
 
-
 if __name__ == '__main__':
     wrapper = Main()
