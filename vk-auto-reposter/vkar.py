@@ -17,15 +17,14 @@ import json
 
 
 class Main:
-
-    def __init__(self, _file_name):
+    def __init__(self):
         print('Starting searching posts...')
 
-        try:
-            with open(_file_name, 'r', encoding='UTF8') as cfg_file:
-                self.cfg = json.load(cfg_file)
-        except FileNotFoundError:
-            exit('Configuration file not found! Program exit...')
+        self.cfg_file_name = 'config.json'
+        self.posted_file_name = 'posted.json'
+
+        self.cfg = self.load_json(self.cfg_file_name)
+        self.posted = self.load_json(self.posted_file_name)
 
         self.vk = vk_api.VKAuth(self.cfg['api']['scope'],
                                 self.cfg['api']['app_id'],
@@ -33,65 +32,97 @@ class Main:
                                 self.cfg['api']['login'],
                                 self.cfg['api']['password'])
         self.vk.auth()
-
         self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
-
         self.interests = self.cfg['search']['interests']
         self.groups_with_interests = dict()
-        self.now_time = time.time()
-        self.maximum_old_posts_time = self.now_time - 60 * 60 * 24
+        self.date = time.localtime()
         self.post_to_repost = list()
         self.already_posted = list()
+        self.groups_list = list()
 
-    def get_groups_by_interests(self):
-        query = {'type': 'group',
-                 'country_id': 1,
-                 'sort': 2,
-                 'count': self.cfg['search']['maximum_checking_count']}
-        groups_list = []
-        for interest in self.interests:
-            query.update({'q': interest})
-            response = self.vk.get_response('groups.search', query)
-            for each in response['items']:
-                groups_list.append('-'+str(each['id']))
-            self.groups_with_interests.update({interest: groups_list})
-            groups_list = []
+        self.get_groups_list()
+        self.load_posts_from_groups()
+        self.do_repost()
 
-    def search_posts_with_max_likes(self):
-        query = {'count': self.cfg['search']['maximum_checking_count'],
+    @staticmethod
+    def load_json(_file_name):
+        try:
+            with open(_file_name, 'r', encoding='UTF8') as _file:
+                return json.load(_file)
+        except FileNotFoundError:
+            exit('File {} not found! Program exit...'.format(_file_name))
+
+    @staticmethod
+    def save_json(_data, _file_name):
+        try:
+            with open(_file_name, 'w', encoding='UTF8') as _file:
+                json.dump(_data, _file, sort_keys=True, ensure_ascii=False, indent=2)
+        except IOError:
+            print('Ошибка записи файла {}'.format(_file_name))
+
+    def get_groups_list(self):
+        try:
+            _interest = self.cfg['search']['interests'][self.cfg['search']['checking_interest']]
+            if _interest:
+                query = {'type': 'group',
+                         'country_id': 1,
+                         'sort': 2,
+                         'count': self.cfg['search']['maximum_groups_in_list'],
+                         'q': _interest}
+                _response = self.vk.get_response('groups.search', query)
+                for each in _response['items']:
+                    if (each['is_closed'] == 0) & (str(each['id']) not in self.cfg['search']['ignored_groups']):
+                        self.groups_list.append('-' + str(each['id']))
+            else:
+                exit('В файле настроек не указан ни один интерес.')
+        except IndexError:
+            print('Ошибка конфигурационного файла. Не соответсвие количесва интересов проверяемому индексу.')
+
+    def load_posts_from_groups(self):
+        query = {'count': 30,
                  'filter': 'owner'}
-        for each in self.groups_with_interests:
-            for group_id in self.groups_with_interests[each]:
-                query.update({'owner_id': group_id})
-                _response = self.vk.get_response('wall.get', query)
-                try:
-                    for post in _response['items']:
-                        if post['date'] > self.maximum_old_posts_time:
-                            self.df.loc[len(self.df)] = [post['owner_id'], post['id'], post['likes']['count']]
-                except TypeError:
-                    pass
-            self.df = self.df.sort_values('likes', ascending=0).head(self.cfg['repost']['reposts_count'])
-            self.repost()
-            self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
-            if self.cfg['repost']['repost_wait'] > 0:
-                print('Waiting {} seconds to next repost...'.format(self.cfg['repost']['repost_wait']))
-                time.sleep(self.cfg['repost']['repost_wait'])
+        for group_id in self.groups_list:
+            query.update({'owner_id': group_id})
+            _response = self.vk.get_response('wall.get', query)
+            try:
+                for post in _response['items']:
+                    if time.gmtime(post['date'])[2] == self.date[2] - 2:
+                        self.df.loc[len(self.df)] = [str(post['owner_id']).replace('.0', ''),
+                                                     str(post['id']).replace('.0', ''),
+                                                     post['likes']['count']]
+            except TypeError:
+                pass
+        self.df = self.df.sort_values('likes', ascending=False)
 
-    def repost(self):
+    def increase_counter(self):
+        if self.cfg['search']['checking_interest'] < (len(self.cfg['search']['interests']) - 1):
+            self.cfg['search']['checking_interest'] += 1
+        else:
+            self.cfg['search']['checking_interest'] = 0
+
+    def do_repost(self):
         for each in range(len(self.df)):
             _getter = self.df.iloc[each]
-            self.post_to_repost.append('wall{}_{}'.format(str(_getter['owner_id']).replace('.0', ''),
-                                                          str(_getter['post_id'])).replace('.0', ''))
-        for each in self.post_to_repost:
-            if each not in self.already_posted:
-                self.vk.get_response('wall.repost', {'object': each,
+            _post_id = 'wall{}_{}'.format(_getter['owner_id'], _getter['post_id'])
+            if _post_id not in self.posted:
+                print('Делаем репост записи: {}'.format(_post_id))
+                self.vk.get_response('wall.repost', {'object': _post_id,
                                                      'group_id': self.cfg['repost']['repost_to'],
                                                      'message': self.cfg['repost']['add_tags']})
-                self.already_posted.append(each)
-                print('Repost done!')
+                self.posted.append(_post_id)
+                self.increase_counter()
+                self.save_json(self.posted, self.posted_file_name)
+                self.save_json(self.cfg, self.cfg_file_name)
+                print('Запись опубликованна.')
+                exit(0)
+            else:
+                print('В данной группе новых постов нет. Переключаемся на следующий интерес.')
+                self.increase_counter()
+                self.save_json(self.cfg, self.cfg_file_name)
+                self.get_groups_list()
+                self.load_posts_from_groups()
+                self.do_repost()
 
 
 if __name__ == '__main__':
-    wrapper = Main('vkar.json')
-    wrapper.get_groups_by_interests()
-    wrapper.search_posts_with_max_likes()
+    wrapper = Main()
