@@ -6,8 +6,12 @@ Phone: +7 (383) 299-1-373
 Skype: martysyuk
 
 Доработать:
-1) Проверку сделаных репостов, чтобы не повторялись.
-2) сделать автоматическую авторизацию уазанного пользователя
+- Шифрование  пароля,  чтобы  не  хранить  его  в  открытом виде в файле
+- Добавить  проверку  уже  репостнутых  постов по дате, с целью удаления
+лишних запесей из файла reposted.json
+- Убрать авторизацию при каждом запуске программы
+- Добавить  получение  и  запись TOKEN в файл конфигурации, если прежний
+TOKEN не был найден или оказался не действующим
 """
 
 import vk_api
@@ -19,9 +23,8 @@ import json
 class Main:
     def __init__(self):
 
-        self.__version__ = '1.2.7'
+        self.__version__ = '1.2.8'
 
-        print()
         print('VKar v.{} - VKontakte auto reposter\n'
               '---------------------------------------------------------\n'
               'Программа автоматическогопоиска публикаций  по  интересам\n'
@@ -45,6 +48,7 @@ class Main:
         self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
         self.interests = self.cfg['search']['interests']
         self.groups_with_interests = dict()
+        self.today = time.strftime("%Y%m%d")
         self.date = time.localtime()
         self.post_to_repost = list()
         self.already_posted = list()
@@ -111,16 +115,21 @@ class Main:
             self.cfg['search']['checking_interest'] = 0
 
     def do_repost(self):
+        try:
+            _posted = self.posted[self.today]
+        except KeyError:
+            _posted = list()
         try_couter = 0
         for each in range(len(self.df)):
             _getter = self.df.iloc[each]
             _post_id = 'wall{}_{}'.format(_getter['owner_id'], _getter['post_id'])
-            if _post_id not in self.posted:
+            if _post_id not in _posted:
                 print('Делаем репост записи: {}'.format(_post_id))
                 self.vk.get_response('wall.repost', {'object': _post_id,
                                                      'group_id': self.cfg['repost']['repost_to'],
                                                      'message': self.cfg['repost']['add_tags']})
-                self.posted.append(_post_id)
+                _posted.append(_post_id)
+                self.posted = {self.today: _posted}
                 self.increase_counter()
                 self.save_json(self.posted, self.posted_file_name)
                 self.save_json(self.cfg, self.cfg_file_name)
