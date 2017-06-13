@@ -18,12 +18,13 @@ import vk_api
 import time
 import pandas as pd
 import json
+from pprint import pprint
 
 
 class Main:
     def __init__(self):
 
-        self.__version__ = '1.2.8'
+        self.__version__ = '1.3.0'
 
         print('VKar v.{} - VKontakte auto reposter\n'
               '---------------------------------------------------------\n'
@@ -43,7 +44,8 @@ class Main:
                                 self.cfg['api']['app_id'],
                                 self.cfg['api']['api_ver'],
                                 self.cfg['api']['login'],
-                                self.cfg['api']['password'])
+                                self.cfg['api']['password'],
+                                show_error = self.cfg['show_errors'])
         self.vk.auth()
         self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
         self.interests = self.cfg['search']['interests']
@@ -53,6 +55,7 @@ class Main:
         self.post_to_repost = list()
         self.already_posted = list()
         self.groups_list = list()
+        self.try_couter = 0
 
         self.get_groups_list()
         self.load_posts_from_groups()
@@ -114,20 +117,36 @@ class Main:
         else:
             self.cfg['search']['checking_interest'] = 0
 
+    def get_post_data(self, _post_id):
+        _attach_list = list()
+        _response = self.vk.get_response('wall.getById', {'posts': _post_id})[0]
+        try:
+            for each in _response['attachments']:
+                _attach_list.append('{}{}_{}'.format(each['type'], each[each['type']]['owner_id'],
+                                                     each[each['type']]['id']))
+            _attach = ','.join(_attach_list)
+        except KeyError:
+            _attach = ''
+        return _response['text'], _attach, str(_response['owner_id'])
+
     def do_repost(self):
         try:
             _posted = self.posted[self.today]
         except KeyError:
             _posted = list()
-        try_couter = 0
         for each in range(len(self.df)):
             _getter = self.df.iloc[each]
-            _post_id = 'wall{}_{}'.format(_getter['owner_id'], _getter['post_id'])
+            _post_id = '{}_{}'.format(_getter['owner_id'], _getter['post_id'])
             if _post_id not in _posted:
-                print('Делаем репост записи: {}'.format(_post_id))
-                self.vk.get_response('wall.repost', {'object': _post_id,
-                                                     'group_id': self.cfg['repost']['repost_to'],
-                                                     'message': self.cfg['repost']['add_tags']})
+                _text, _attach, _owner = self.get_post_data(_post_id)
+                _message = '{}\n\n{}\n\n[[club{}|Автор публикации]]'.format(_text, self.cfg['repost']['add_tags'],
+                                                                 _owner.replace('-', ''))
+                _query = {'owner_id': '-' + self.cfg['repost']['repost_to'],
+                          'from_group': 1,
+                          'message': _message}
+                if _attach:
+                    _query.update({'attachments': _attach})
+                self.vk.get_response('wall.post', _query)
                 _posted.append(_post_id)
                 self.posted = {self.today: _posted}
                 self.increase_counter()
@@ -136,8 +155,8 @@ class Main:
                 print('Запись опубликованна.')
                 exit(0)
             else:
-                try_couter += 1
-                if try_couter < len(self.cfg['search']['interests']):
+                if self.try_couter < len(self.cfg['search']['interests']) - 1:
+                    self.try_couter += 1
                     print('В данной группе новых постов нет. Переключаемся на следующий интерес.')
                     self.increase_counter()
                     self.save_json(self.cfg, self.cfg_file_name)
@@ -146,6 +165,7 @@ class Main:
                     self.do_repost()
                 else:
                     exit('На сегодня свежих постов больше нет!')
+
 
 if __name__ == '__main__':
     wrapper = Main()
