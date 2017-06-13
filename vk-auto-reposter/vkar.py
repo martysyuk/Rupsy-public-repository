@@ -24,7 +24,7 @@ from pprint import pprint
 class Main:
     def __init__(self):
 
-        self.__version__ = '1.3.1'
+        self.__version__ = '1.3.0'
 
         print('VKar v.{} - VKontakte auto reposter\n'
               '---------------------------------------------------------\n'
