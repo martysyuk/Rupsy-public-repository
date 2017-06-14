@@ -32,7 +32,7 @@ class Main:
               'Автор: Мартысюк Илья\n'
               'E-Mail: martysyuk@gmail.com\n'.format(self.__version__))
 
-        _cfg_file_path = os.getcwd()
+        _cfg_file_path = os.path.dirname(os.path.realpath(__file__))
         self.cfg_file_name = os.path.join(_cfg_file_path, 'config.json')
         self.posted_file_name = os.path.join(_cfg_file_path, 'posted.json')
 
