@@ -159,7 +159,7 @@ class VKAuth(object):
                         'v': self.api_v
                         })
         while True:
-            _response = requests.get('https://api.vk.com/method/' + _method, _params).json()
+            _response = requests.post('https://api.vk.com/method/' + _method, _params).json()
             try:
                 return _response['response']
             except KeyError:
