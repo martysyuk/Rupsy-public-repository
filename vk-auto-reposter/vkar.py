@@ -7,8 +7,6 @@ Skype: martysyuk
 
 Доработать:
 - Шифрование  пароля,  чтобы  не  хранить  его  в  открытом виде в файле
-- Добавить  проверку  уже  репостнутых  постов по дате, с целью удаления
-лишних запесей из файла reposted.json
 - Убрать авторизацию при каждом запуске программы
 - Добавить  получение  и  запись TOKEN в файл конфигурации, если прежний
 TOKEN не был найден или оказался не действующим
@@ -18,13 +16,13 @@ import vk_api
 import time
 import pandas as pd
 import json
-from pprint import pprint
+import os
 
 
 class Main:
     def __init__(self):
 
-        self.__version__ = '1.3.0'
+        self.__version__ = '1.3.1'
 
         print('VKar v.{} - VKontakte auto reposter\n'
               '---------------------------------------------------------\n'
@@ -34,8 +32,9 @@ class Main:
               'Автор: Мартысюк Илья\n'
               'E-Mail: martysyuk@gmail.com\n'.format(self.__version__))
 
-        self.cfg_file_name = 'config.json'
-        self.posted_file_name = 'posted.json'
+        _cfg_file_path = os.getcwd()
+        self.cfg_file_name = os.path.join(_cfg_file_path, 'config.json')
+        self.posted_file_name = os.path.join(_cfg_file_path, 'posted.json')
 
         self.cfg = self.load_json(self.cfg_file_name)
         self.posted = self.load_json(self.posted_file_name)
@@ -45,7 +44,7 @@ class Main:
                                 self.cfg['api']['api_ver'],
                                 self.cfg['api']['login'],
                                 self.cfg['api']['password'],
-                                show_error = self.cfg['show_errors'])
+                                show_error=self.cfg['show_errors'])
         self.vk.auth()
         self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
         self.interests = self.cfg['search']['interests']
@@ -96,7 +95,7 @@ class Main:
             print('Ошибка конфигурационного файла. Не соответсвие количесва интересов проверяемому индексу.')
 
     def load_posts_from_groups(self):
-        query = {'count': 30,
+        query = {'count': self.cfg['search']['maximum_posts_in_list'],
                  'filter': 'owner'}
         for group_id in self.groups_list:
             query.update({'owner_id': group_id})
@@ -140,7 +139,7 @@ class Main:
             if _post_id not in _posted:
                 _text, _attach, _owner = self.get_post_data(_post_id)
                 _message = '{}\n\n{}\n\n[[club{}|Автор публикации]]'.format(_text, self.cfg['repost']['add_tags'],
-                                                                 _owner.replace('-', ''))
+                                                                            _owner.replace('-', ''))
                 _query = {'owner_id': '-' + self.cfg['repost']['repost_to'],
                           'from_group': 1,
                           'message': _message}
@@ -154,17 +153,16 @@ class Main:
                 self.save_json(self.cfg, self.cfg_file_name)
                 print('Запись опубликованна.')
                 exit(0)
-            else:
-                if self.try_couter < len(self.cfg['search']['interests']) - 1:
-                    self.try_couter += 1
-                    print('В данной группе новых постов нет. Переключаемся на следующий интерес.')
-                    self.increase_counter()
-                    self.save_json(self.cfg, self.cfg_file_name)
-                    self.get_groups_list()
-                    self.load_posts_from_groups()
-                    self.do_repost()
-                else:
-                    exit('На сегодня свежих постов больше нет!')
+        if self.try_couter < len(self.cfg['search']['interests']) - 1:
+            self.try_couter += 1
+            print('В данной группе новых постов нет. Переключаемся на следующий интерес.')
+            self.increase_counter()
+            self.save_json(self.cfg, self.cfg_file_name)
+            self.get_groups_list()
+            self.load_posts_from_groups()
+            self.do_repost()
+        else:
+            exit('На сегодня свежих постов больше нет!')
 
 
 if __name__ == '__main__':

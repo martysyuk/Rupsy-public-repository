@@ -15,7 +15,7 @@
     "repost_to": "28713533"
   },
   "search": {
-    "checking_interest": 0,
+    "checking_interest": 1,
     "ignored_groups": [
       "124695993",
       "146593897"
@@ -26,7 +26,8 @@
       "мужская психология",
       "возрастная психология"
     ],
-    "maximum_groups_in_list": 15
+    "maximum_groups_in_list": 10,
+    "maximum_posts_in_list": 15
   },
   "show_errors": false
 }
