@@ -168,7 +168,7 @@ def load_json(_file_name):
 
 
 if __name__ == '__main__':
-    __version__ = '1.4.1'
+    __version__ = '1.4.0'
 
     print('C-3PO-vk v.{} - VKontakte auto reposter\n'
           '---------------------------------------------------------\n'
