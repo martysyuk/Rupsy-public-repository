@@ -3,20 +3,14 @@
 Title: Python Engineer
 E-Mail: martysyuk@mail.ru
 Phone: +7 (383) 299-1-373
-Skype: martysyuk
+Skype: martysyuk"""
 
-Доработать:
-- Шифрование  пароля,  чтобы  не  хранить  его  в  открытом виде в файле
-- Убрать авторизацию при каждом запуске программы
-- Добавить  получение  и  запись TOKEN в файл конфигурации, если прежний
-TOKEN не был найден или оказался не действующим
-"""
-
-import vk_api
-import time
-import pandas as pd
 import json
 import os
+import time
+
+import pandas as pd
+import vk_api
 
 
 class Main:
