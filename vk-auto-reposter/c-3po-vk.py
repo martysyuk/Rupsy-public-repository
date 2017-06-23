@@ -22,22 +22,12 @@ import os
 class Main:
     def __init__(self):
 
-        self.__version__ = '1.3.1'
+        self.done = False
 
-        print('VKar v.{} - VKontakte auto reposter\n'
-              '---------------------------------------------------------\n'
-              'Программа автоматического поиска публикаций по  интересам\n'
-              'с наибольшим количеством лайков и автоматическим репостом\n'
-              'этих записей на стену Вашего сообщества.\n\n'
-              'Автор: Мартысюк Илья\n'
-              'E-Mail: martysyuk@gmail.com\n'.format(self.__version__))
-
-        _cfg_file_path = os.path.dirname(os.path.realpath(__file__))
-        self.cfg_file_name = os.path.join(_cfg_file_path, 'config.json')
-        self.posted_file_name = os.path.join(_cfg_file_path, 'posted.json')
-
-        self.cfg = self.load_json(self.cfg_file_name)
-        self.posted = self.load_json(self.posted_file_name)
+        self.cfg = cfg
+        self.posted = posted
+        self.cfg_file_name = cfg_file_path
+        self.posted_file_name = posted_file_path
 
         self.vk = vk_api.VKAuth(self.cfg['api']['scope'],
                                 self.cfg['api']['app_id'],
@@ -46,27 +36,26 @@ class Main:
                                 self.cfg['api']['password'],
                                 show_error=self.cfg['show_errors'])
         self.vk.auth()
-        self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
-        self.interests = self.cfg['search']['interests']
-        self.groups_with_interests = dict()
+
         self.today = time.strftime("%Y%m%d")
+        self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
+
+    def __call__(self, repost_to):
+        self.repost_to = repost_to
+        self.interests = self.cfg['groups'][repost_to]['interests']
+        self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
         self.date = time.localtime()
+        self.groups_with_interests = dict()
         self.post_to_repost = list()
         self.already_posted = list()
         self.groups_list = list()
         self.try_couter = 0
 
+        print('Начинаем поиск постов для сообщества {} по интересам: {}'.format(self.repost_to, self.interests))
+
         self.get_groups_list()
         self.load_posts_from_groups()
         self.do_repost()
-
-    @staticmethod
-    def load_json(_file_name):
-        try:
-            with open(_file_name, 'r', encoding='UTF8') as _file:
-                return json.load(_file)
-        except FileNotFoundError:
-            exit('Ошибка: файл {} не найден.'.format(_file_name))
 
     @staticmethod
     def save_json(_data, _file_name):
@@ -78,16 +67,17 @@ class Main:
 
     def get_groups_list(self):
         try:
-            _interest = self.cfg['search']['interests'][self.cfg['search']['checking_interest']]
+            _interest = self.interests
             if _interest:
                 query = {'type': 'group',
                          'country_id': 1,
                          'sort': 2,
-                         'count': self.cfg['search']['maximum_groups_in_list'],
+                         'count': self.cfg['groups'][self.repost_to]['maximum_groups_in_list'],
                          'q': _interest}
                 _response = self.vk.get_response('groups.search', query)
                 for each in _response['items']:
-                    if (each['is_closed'] == 0) & (str(each['id']) not in self.cfg['search']['ignored_groups']):
+                    if (each['is_closed'] == 0) & (
+                                str(each['id']) not in self.cfg['groups'][self.repost_to]['ignored_groups']):
                         self.groups_list.append('-' + str(each['id']))
             else:
                 exit('В файле настроек не указан ни один интерес.')
@@ -95,7 +85,7 @@ class Main:
             print('Ошибка конфигурационного файла. Не соответсвие количесва интересов проверяемому индексу.')
 
     def load_posts_from_groups(self):
-        query = {'count': self.cfg['search']['maximum_posts_in_list'],
+        query = {'count': self.cfg['groups'][self.repost_to]['maximum_posts_in_list'],
                  'filter': 'owner'}
         for group_id in self.groups_list:
             query.update({'owner_id': group_id})
@@ -111,10 +101,11 @@ class Main:
         self.df = self.df.sort_values('likes', ascending=False)
 
     def increase_counter(self):
-        if self.cfg['search']['checking_interest'] < (len(self.cfg['search']['interests']) - 1):
-            self.cfg['search']['checking_interest'] += 1
+        if self.cfg['groups'][self.repost_to]['checking_interest'] < (
+                    len(self.cfg['groups'][self.repost_to]['interests']) - 1):
+            self.cfg['groups'][self.repost_to]['checking_interest'] += 1
         else:
-            self.cfg['search']['checking_interest'] = 0
+            self.cfg['groups'][self.repost_to]['checking_interest'] = 0
 
     def get_post_data(self, _post_id):
         _attach_list = list()
@@ -126,7 +117,12 @@ class Main:
             _attach = ','.join(_attach_list)
         except KeyError:
             _attach = ''
-        return _response['text'], _attach, str(_response['owner_id'])
+        try:
+            _history_lenght = len(_response['copy_history']) - 1
+            return _response['copy_history'][_history_lenght]['text'], _attach, str(
+                _response['copy_history'][_history_lenght]['owner_id'])
+        except KeyError:
+            return _response['text'], _attach, str(_response['owner_id'])
 
     def do_repost(self):
         try:
@@ -137,10 +133,13 @@ class Main:
             _getter = self.df.iloc[each]
             _post_id = '{}_{}'.format(_getter['owner_id'], _getter['post_id'])
             if _post_id not in _posted:
+                print('Делаем репост записи {} в сообщество {}.'.format(_post_id, self.repost_to))
                 _text, _attach, _owner = self.get_post_data(_post_id)
-                _message = '{}\n\n{}\n\n[[club{}|Автор публикации]]'.format(_text, self.cfg['repost']['add_tags'],
-                                                                            _owner.replace('-', ''))
-                _query = {'owner_id': '-' + self.cfg['repost']['repost_to'],
+                _message = '{}\n\n{}'.format(_text, self.cfg['groups'][self.repost_to][
+                    'repost_tags'])
+                if self.cfg['groups'][self.repost_to]['copyright']:
+                    _message = '{}\n\nИсточник публикации: @club{}'.format(_message, _owner.replace('-', ''))
+                _query = {'owner_id': '-' + self.repost_to,
                           'from_group': 1,
                           'message': _message}
                 if _attach:
@@ -151,9 +150,10 @@ class Main:
                 self.increase_counter()
                 self.save_json(self.posted, self.posted_file_name)
                 self.save_json(self.cfg, self.cfg_file_name)
-                print('Запись опубликованна.')
-                exit(0)
-        if self.try_couter < len(self.cfg['search']['interests']) - 1:
+                print('Запись в сообществе опубликованна.\n'.format(self.repost_to))
+                self.done = True
+                break
+        if (self.try_couter < len(self.cfg['groups'][self.repost_to]['interests']) - 1) and (self.done is False):
             self.try_couter += 1
             print('В данной группе новых постов нет. Переключаемся на следующий интерес.')
             self.increase_counter()
@@ -161,9 +161,38 @@ class Main:
             self.get_groups_list()
             self.load_posts_from_groups()
             self.do_repost()
-        else:
-            exit('На сегодня свежих постов больше нет!')
+
+
+def load_json(_file_name):
+    try:
+        with open(_file_name, 'r', encoding='UTF8') as _file:
+            return json.load(_file)
+    except FileNotFoundError:
+        exit('Ошибка: файл {} не найден.'.format(_file_name))
+    except json.decoder.JSONDecodeError:
+        exit('Ошибка в формате файла JSON: {}'.format(_file_name))
 
 
 if __name__ == '__main__':
-    wrapper = Main()
+    __version__ = '1.4.1'
+
+    print('C-3PO-vk v.{} - VKontakte auto reposter\n'
+          '---------------------------------------------------------\n'
+          'Программа автоматического поиска публикаций по  интересам\n'
+          'с наибольшим количеством лайков и автоматическим репостом\n'
+          'этих записей на стену Вашего сообщества.\n\n'
+          'Автор: Мартысюк Илья\n'
+          'E-Mail: martysyuk@gmail.com\n'.format(__version__))
+
+    app_dir = os.path.dirname(os.path.realpath(__file__))
+    cfg_file_path = os.path.join(app_dir, 'config.json')
+    posted_file_path = os.path.join(app_dir, 'posted.json')
+    cfg = load_json(cfg_file_path)
+    posted = load_json(posted_file_path)
+    methods = list()
+
+    repost = Main()
+
+    for repost_to_id in cfg['groups']:
+        if cfg['groups'][repost_to_id]['active']:
+            repost(repost_to_id)
