@@ -15,7 +15,7 @@ class FormParser(HTMLParser):
         self.in_form = False
         self.in_denial = False
         self.form_parsed = False
-
+ 
     def handle_starttag(self, tag, attrs):
         tag = tag.lower()
         if tag == 'form':
