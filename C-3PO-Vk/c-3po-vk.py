@@ -86,7 +86,7 @@ class Main:
             _response = self.vk.get_response('wall.get', query)
             try:
                 for post in _response['items']:
-                    if time.gmtime(post['date'])[2] == self.date[2] - 2:
+                    if time.gmtime(post['date'])[2] <= self.date[2] - 2:
                         self.df.loc[len(self.df)] = [str(post['owner_id']).replace('.0', ''),
                                                      str(post['id']).replace('.0', ''),
                                                      post['likes']['count']]
@@ -168,7 +168,7 @@ def load_json(_file_name):
 
 
 if __name__ == '__main__':
-    __version__ = '1.4.0'
+    __version__ = '1.4.1'
 
     print('C-3PO-vk v.{} - VKontakte auto reposter\n'
           '---------------------------------------------------------\n'
