@@ -170,7 +170,7 @@ def load_json(_file_name):
 if __name__ == '__main__':
     __version__ = '1.4.1'
 
-    print('C-3PO-vk v.{} - VKontakte auto reposter\n'
+    print('C-3PO-Vk v.{} - VKontakte auto reposter\n'
           '---------------------------------------------------------\n'
           'Программа автоматического поиска публикаций по  интересам\n'
           'с наибольшим количеством лайков и автоматическим репостом\n'
