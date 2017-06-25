@@ -1,9 +1,9 @@
 {
   "api": {
     "api_ver": "5.64",
-    "app_id": "6064589",
-    "login": "martysuk@yandex.ru",
-    "password": "Ctyctvbkmz81",
+    "app_id": "",
+    "login": "",
+    "password": "",
     "scope": [
       "search",
       "groups",
