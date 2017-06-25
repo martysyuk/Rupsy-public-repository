@@ -1,15 +1,4 @@
 {
-  "api": {
-    "api_ver": "5.64",
-    "app_id": "",
-    "login": "",
-    "password": "",
-    "scope": [
-      "search",
-      "groups",
-      "wall"
-    ]
-  },
   "groups": {
     "28713533": {
       "active": true,
