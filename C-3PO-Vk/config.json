@@ -1,23 +1,14 @@
 {
-  "api": {
-    "api_ver": "5.64",
-    "app_id": "",
-    "login": "",
-    "password": "",
-    "scope": [
-      "search",
-      "groups",
-      "wall"
-    ]
-  },
   "groups": {
     "28713533": {
       "active": true,
-      "checking_interest": 1,
+      "checking_interest": 2,
       "copyright": true,
       "ignored_groups": [
         "124695993",
-        "146593897"
+        "146593897",
+        "120383082",
+        "77136770"
       ],
       "interests": [
         "семейная психология",
@@ -26,14 +17,19 @@
         "возрастная психология"
       ],
       "maximum_groups_in_list": 30,
-      "maximum_posts_in_list": 15,
+      "maximum_posts_in_list": 30,
       "repost_tags": "Тэги: #therapie@therapie #мартысюк #новосибирск #психолог #детскийпсихолог #семейныйпсихолог #развитиекоммуникативныхнавыков #статья #интересное #психология #ривенделл #альтеравита #ильямартысюк #rupsy #skypeконсультация #консультацияпсихолога #martysyuk #skype #скайп #психологическиегруппы"
     },
     "90431373": {
-      "active": false,
-      "checking_interest": 2,
-      "copyright": false,
-      "ignored_groups": [],
+      "active": true,
+      "checking_interest": 0,
+      "copyright": true,
+      "ignored_groups": [
+        "124695993",
+        "146593897",
+        "120383082",
+        "77136770"
+      ],
       "interests": [
         "семейная психология",
         "психология отношений",
@@ -41,7 +37,7 @@
         "возрастная психология"
       ],
       "maximum_groups_in_list": 30,
-      "maximum_posts_in_list": 15,
+      "maximum_posts_in_list": 30,
       "repost_tags": "Тэги: #therapie@therapie #мартысюк #новосибирск #психолог #детскийпсихолог #семейныйпсихолог #развитиекоммуникативныхнавыков #статья #интересное #психология #ривенделл #альтеравита #ильямартысюк #rupsy #skypeконсультация #консультацияпсихолога #martysyuk #skype #скайп #психологическиегруппы"
     }
   },

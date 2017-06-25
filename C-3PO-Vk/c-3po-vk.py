@@ -182,6 +182,7 @@ if __name__ == '__main__':
     cfg_file_path = os.path.join(app_dir, 'config.json')
     posted_file_path = os.path.join(app_dir, 'posted.json')
     cfg = load_json(cfg_file_path)
+    cfg.update(load_json(os.path.join(app_dir, 'api.json')))
     posted = load_json(posted_file_path)
     methods = list()
 
