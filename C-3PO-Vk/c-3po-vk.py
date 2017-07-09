@@ -10,31 +10,27 @@ import os
 import time
 
 import pandas as pd
+import encrypt
 import vk_api
 
 
 class Main:
     def __init__(self):
-
-        self.done = False
-
         self.cfg = cfg
         self.posted = posted
         self.cfg_file_name = cfg_file_path
         self.posted_file_name = posted_file_path
-
         self.vk = vk_api.VKAuth(self.cfg['api']['scope'],
                                 self.cfg['api']['app_id'],
                                 self.cfg['api']['api_ver'],
                                 self.cfg['api']['login'],
-                                self.cfg['api']['password'],
+                                encrypt.decrypt(self.cfg['api']['password']),
                                 show_error=self.cfg['show_errors'])
         self.vk.auth()
-
         self.today = time.strftime("%Y%m%d")
-        self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
 
     def __call__(self, repost_to):
+        self.done = False
         self.repost_to = repost_to
         self.interests = self.cfg['groups'][repost_to]['interests']
         self.df = pd.DataFrame(columns=['owner_id', 'post_id', 'likes'])
@@ -45,14 +41,14 @@ class Main:
         self.groups_list = list()
         self.try_couter = 0
 
-        print('Начинаем поиск постов для сообщества {} по интересам: {}'.format(self.repost_to, self.interests))
-
         self.get_groups_list()
         self.load_posts_from_groups()
         self.do_repost()
 
     @staticmethod
     def save_json(_data, _file_name):
+        if 'api' in _data:
+            del _data['api']
         try:
             with open(_file_name, 'w', encoding='UTF8') as _file:
                 json.dump(_data, _file, sort_keys=True, ensure_ascii=False, indent=2)
@@ -61,7 +57,8 @@ class Main:
 
     def get_groups_list(self):
         try:
-            _interest = self.interests
+            _interest = self.interests[self.cfg['groups'][self.repost_to]['checking_interest']]
+            print('Начинаем поиск постов для сообщества {} по запросу: "{}"'.format(self.repost_to, _interest))
             if _interest:
                 query = {'type': 'group',
                          'country_id': 1,
@@ -168,9 +165,9 @@ def load_json(_file_name):
 
 
 if __name__ == '__main__':
-    __version__ = '1.4.1'
+    __version__ = '1.4.2'
 
-    print('C-3PO-Vk v.{} - VKontakte auto reposter\n'
+    print('\nC-3PO-Vk v.{} - VKontakte auto reposter\n'
           '---------------------------------------------------------\n'
           'Программа автоматического поиска публикаций по  интересам\n'
           'с наибольшим количеством лайков и автоматическим репостом\n'

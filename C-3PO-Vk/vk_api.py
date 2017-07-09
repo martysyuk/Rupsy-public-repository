@@ -286,3 +286,8 @@ class VKAuth(object):
         self.security_code = None
         self.email = None
         self.pswd = None
+
+if __name__ == '__main__':
+    print('Этот модуль должен быть подключен к другой программе.')
+else:
+    print('ВКонтакте API модуль подключен.')

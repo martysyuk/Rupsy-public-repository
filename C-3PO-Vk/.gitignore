@@ -105,3 +105,4 @@ ENV/
 
 # My ignor
 api.json
+encrypt.py
