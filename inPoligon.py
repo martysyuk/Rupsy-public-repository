@@ -1,4 +1,7 @@
 def point_in_polygon(pnt, plgn):
+    # pnt - tuple of x, y point coordinates
+    # plgn - list of tuples with x, y polygon coordinates 
+    # return - True of False
     x = pnt[0]
     y = pnt[1]
     c = 0
