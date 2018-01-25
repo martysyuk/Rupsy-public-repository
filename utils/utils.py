@@ -1,3 +1,11 @@
+# -*- coding: UTF-8 -*-
+"""Author: Martysyuk Ilya
+Title: Python Engineer
+E-Mail: martysyuk@gmail.com
+Skype: martysyuk
+"""
+
+
 class Config:
     @staticmethod
     def LoadJson(filename='config.json'):
