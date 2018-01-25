@@ -1,3 +1,30 @@
+class Config:
+    @staticmethod
+    def load_json(filename='config.json'):
+        import json
+        try:
+            with open(filename, 'r', encoding='utf-8') as f:
+                try:
+                    _settings = json.loads(f.read())
+                    return _settings
+                except json.decoder.JSONDecodeError as err:
+                    print('[ERR] JSON data reading error!')
+                    return json.dumps({'error': True, 'error_desc': err})
+        except IOError as err:
+            print('[ERR] {}'.format(err))
+            return json.dumps({'error': True, 'error_desc': err})
+
+    @staticmethod
+    def save_json(data_to_save, filename='config.json'):
+        import json
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data_to_save, f, sort_keys=True, indent=2, ensure_ascii=False)
+                print('[OK] Settings save to {}.'.format(filename))
+        except IOError as err:
+            print('[ERR] {}'.format(err))
+
+
 class Intersection:
     @staticmethod
     def PointInPolygon(pnt, plgn):
