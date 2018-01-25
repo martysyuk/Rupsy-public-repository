@@ -1,6 +1,6 @@
 class Config:
     @staticmethod
-    def load_json(filename='config.json'):
+    def LoadJson(filename='config.json'):
         import json
         try:
             with open(filename, 'r', encoding='utf-8') as f:
@@ -15,7 +15,7 @@ class Config:
             return json.dumps({'error': True, 'error_desc': err})
 
     @staticmethod
-    def save_json(data_to_save, filename='config.json'):
+    def SaveJson(data_to_save, filename='config.json'):
         import json
         try:
             with open(filename, 'w', encoding='utf-8') as f:
